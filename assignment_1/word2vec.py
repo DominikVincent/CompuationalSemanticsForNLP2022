@@ -70,14 +70,14 @@ def negSamplingLossAndGradient(
     # calculate the outside derivatives
 
     # dL/duc
-    gradOutsideVecs[outsideWordIdx] += (1-sigmoid(np.dot(centerWordVec, outsideVectors[outsideWordIdx, :]))) * centerWordVec
+    gradOutsideVecs[outsideWordIdx] += (sigmoid(np.dot(centerWordVec, outsideVectors[outsideWordIdx, :]))-1) * centerWordVec
     # dL/dun
     for i, idx in enumerate(negSampleWordIndices):
-        gradOutsideVecs[idx] = sigmoid(np.dot(centerWordVec, outsideVectors[idx, :])) * centerWordVec
+        gradOutsideVecs[idx] += sigmoid(np.dot(centerWordVec, outsideVectors[idx, :])) * centerWordVec
 
 
     # Calculate the second term
-    gradCenterVec = (sigmoid(np.dot(centerWordVec, outsideVectors[outsideWordIdx])) - 1) * outsideVectors[outsideWordIdx]
+    gradCenterVec += (sigmoid(np.dot(centerWordVec, outsideVectors[outsideWordIdx])) - 1) * outsideVectors[outsideWordIdx]
     for i, idx in enumerate(negSampleWordIndices):
         gradCenterVec += sigmoid(np.dot(centerWordVec, outsideVectors[idx, :])) * outsideVectors[idx]
 
@@ -91,6 +91,8 @@ def negSamplingLossAndGradient(
 
     return loss, gradCenterVec, gradOutsideVecs
 
+def s2h(string, max_value):
+    return hash(string) % max_value
 
 def skipgram(CurrentWordngramsIdx, windowSize, outsideWords, word2Ind,
              centernGramVectors, outsideVectors, dataset,
@@ -130,15 +132,16 @@ def skipgram(CurrentWordngramsIdx, windowSize, outsideWords, word2Ind,
     ### YOUR CODE HERE
     # print(type(outsideWords))
     # print(type(dataset))
+    hashing_size = centernGramVectors.shape[0]
+
 
     # the current words embedding
-    w_hat_t = np.zeros(centernGramVectors[CurrentWordngramsIdx,:].shape[1])
-    for i in range(len(CurrentWordngramsIdx)):
-        w_hat_t += centernGramVectors[i]
-    
-    occurances = np.zeros(outsideVectors.shape[0])
-    for i in range(len(outsideWords)):
-        occurances[word2Ind[outsideWords[i]]] += 1
+    w_hat_t = np.zeros(centernGramVectors[0,:].shape[0])
+    occurances = np.zeros(centernGramVectors.shape[0])
+    for ngram in CurrentWordngramsIdx:
+        w_hat_t += centernGramVectors[s2h(ngram, hashing_size), :]
+        occurances[s2h(ngram, hashing_size)] += 1
+
 
     # go over all outside words and add the gradients and losses
     for i in range(len(outsideWords)):
@@ -146,8 +149,8 @@ def skipgram(CurrentWordngramsIdx, windowSize, outsideWords, word2Ind,
 
         loss += c
         gradOutsideVectors += gout
-        for CurrentWordngramsIdx in range(occurances.shape[0]):
-            gradCenterVecs[CurrentWordngramsIdx] += gin * occurances[CurrentWordngramsIdx]
+        for ngram in CurrentWordngramsIdx:
+            gradCenterVecs[s2h(ngram, hashing_size)] += gin * occurances[s2h(ngram, hashing_size)]
 
 
     ### END YOUR CODE
