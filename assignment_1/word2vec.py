@@ -138,9 +138,9 @@ def skipgram(CurrentWordngramsIdx, windowSize, outsideWords, word2Ind,
     # the current words embedding
     w_hat_t = np.zeros(centernGramVectors[0,:].shape[0])
     occurances = np.zeros(centernGramVectors.shape[0])
-    for ngram in CurrentWordngramsIdx:
-        w_hat_t += centernGramVectors[s2h(ngram, hashing_size), :]
-        occurances[s2h(ngram, hashing_size)] += 1
+    for ngram_idx in CurrentWordngramsIdx:
+        w_hat_t += centernGramVectors[ngram_idx]
+        occurances[ngram_idx] += 1
 
 
     # go over all outside words and add the gradients and losses
@@ -149,8 +149,8 @@ def skipgram(CurrentWordngramsIdx, windowSize, outsideWords, word2Ind,
 
         loss += c
         gradOutsideVectors += gout
-        for ngram in CurrentWordngramsIdx:
-            gradCenterVecs[s2h(ngram, hashing_size)] += gin * occurances[s2h(ngram, hashing_size)]
+        for ngram_idx in CurrentWordngramsIdx:
+            gradCenterVecs[ngram_idx] += gin * occurances[ngram_idx]
 
 
     ### END YOUR CODE
